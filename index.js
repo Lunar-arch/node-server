@@ -1,11 +1,15 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const cors = require('cors');
 
 // Create the app and server
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
+
+// Use CORS middleware before defining routes
+app.use(cors());
 
 // Set up a simple route
 app.get('/', (req, res) => {
