@@ -16,6 +16,20 @@ app.get('/', (req, res) => {
   res.send('Server is running');
 });
 
+io.on('connection', (socket) => {
+  console.log(`Client connected: ${socket.id}`);
+
+  // Handle ping from client
+  socket.on('ping_server', () => {
+    socket.emit('pong_client');
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`Client disconnected: ${socket.id}`);
+  });
+});
+
+
 // Handle socket connections
 io.on('connection', (socket) => {
   console.log('A user connected');
