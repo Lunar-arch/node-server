@@ -6,7 +6,12 @@ const cors = require('cors');
 // Create the app and server
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    origin: '*', // Allow all origins (use specific origin(s) in production for security)
+    methods: ['GET', 'POST'],
+  },
+});
 
 // Use CORS middleware before defining routes
 app.use(cors());
@@ -16,34 +21,24 @@ app.get('/', (req, res) => {
   res.send('Server is running');
 });
 
+// Handle socket connections
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
 
-  // Handle ping from client
+  // Listen for ping from the client and respond with pong
   socket.on('ping_server', () => {
+    console.log(`Ping received from: ${socket.id}`);
     socket.emit('pong_client');
   });
 
-  socket.on('disconnect', () => {
-    console.log(`Client disconnected: ${socket.id}`);
-  });
-});
-
-
-// Handle socket connections
-io.on('connection', (socket) => {
-  console.log('A user connected');
-  
-  // Listen for messages from the client
+  // Listen for a message and send it back
   socket.on('send_message', (message) => {
-    console.log('Received message: ', message);
-    
-    // Simply emit the message back to the client
+    console.log(`Message received: ${message}`);
     socket.emit('receive_message', message);
   });
 
   socket.on('disconnect', () => {
-    console.log('A user disconnected');
+    console.log(`Client disconnected: ${socket.id}`);
   });
 });
 
