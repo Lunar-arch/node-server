@@ -18,6 +18,7 @@ app.use(cors());
 
 // In-memory message store (consider using a database in production)
 const messageHistory = [];
+const users = {}; // Object to store userId -> socketId mapping
 
 // Set up a simple route
 app.get('/', (req, res) => {
@@ -31,9 +32,15 @@ io.on('connection', (socket) => {
   // Send message history to the newly connected client
   socket.emit('message_history', messageHistory);
 
+  // Listen for user registration
+  socket.on('register_user', (userId) => {
+    users[userId] = socket.id; // Map userId to socketId
+    console.log(`User registered: ${userId} -> ${socket.id}`);
+  });
+
   // Listen for incoming messages
   socket.on('send_message', (message) => {
-    console.log(`Message received: ${message}`);
+    console.log(`Message received from ${message.id}: ${message.message}`);
 
     // Add message to history
     messageHistory.push(message);
@@ -45,6 +52,15 @@ io.on('connection', (socket) => {
   // Handle client disconnection
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
+
+    // Find and remove the disconnected user from the mapping
+    for (const [userId, socketId] of Object.entries(users)) {
+      if (socketId === socket.id) {
+        delete users[userId];
+        console.log(`User removed: ${userId}`);
+        break;
+      }
+    }
   });
 });
 
