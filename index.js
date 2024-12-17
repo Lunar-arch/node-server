@@ -13,8 +13,11 @@ const io = socketIo(server, {
   },
 });
 
-// Use CORS middleware before defining routes
+// Use CORS middleware
 app.use(cors());
+
+// In-memory message store (consider using a database in production)
+const messageHistory = [];
 
 // Set up a simple route
 app.get('/', (req, res) => {
@@ -25,18 +28,21 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
 
-  // Listen for ping from the client and respond with pong
-  socket.on('ping_server', () => {
-    console.log(`Ping received from: ${socket.id}`);
-    socket.emit('pong_client');
-  });
+  // Send message history to the newly connected client
+  socket.emit('message_history', messageHistory);
 
-  // Listen for a message and send it back
+  // Listen for incoming messages
   socket.on('send_message', (message) => {
     console.log(`Message received: ${message}`);
-    socket.emit('receive_message', message);
+
+    // Add message to history
+    messageHistory.push(message);
+
+    // Broadcast the message to all clients, including the sender
+    io.emit('receive_message', message);
   });
 
+  // Handle client disconnection
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
   });
